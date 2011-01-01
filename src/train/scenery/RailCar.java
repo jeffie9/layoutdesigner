@@ -32,8 +32,12 @@ import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import train.util.Geometry;
 
@@ -46,6 +50,7 @@ public class RailCar implements Serializable, Cloneable, Shape {
 	private Shape shape;
 	private Point2D pointTowards;
 	private double lastDirection;
+	private double direction;
 	
 	public RailCar() {
 		// simple shape for development, use image later
@@ -61,6 +66,9 @@ public class RailCar implements Serializable, Cloneable, Shape {
 		
 		// points straight up initially
 		lastDirection = Math.toRadians(0.0);
+		
+		direction = 0.0;
+		
 	}
 	
 	public void restore(RailCar origCar) {
@@ -75,6 +83,14 @@ public class RailCar implements Serializable, Cloneable, Shape {
 		lastDirection = origCar.lastDirection;
 	}
 
+	public double getDirection() {
+		return direction;
+	}
+	
+	public void setDirection(double direction) {
+		this.direction = direction;
+	}
+	
 	public void setBranch(Branch branch) {
 		this.branch = branch;
 	}
@@ -102,8 +118,20 @@ public class RailCar implements Serializable, Cloneable, Shape {
 		return pointTowards;
 	}
 	
+	public void setImage(String name) {
+		img = SceneryManager.getInstance().getTrainImage(name);
+	}
+	
 	public void render(Graphics2D g2) {
-		g2.draw(polygon);
+		//g2.draw(polygon);
+        AffineTransform saveTransform = g2.getTransform();
+        AffineTransform at = new AffineTransform();
+        at.translate(loc.getX(), loc.getY());
+        at.rotate(direction);
+        at.translate(-img.getWidth(null)/2, -img.getHeight(null)/2);
+        g2.setTransform(at);
+        g2.drawImage(img, 0, 0, null);  // location set in translation
+        g2.setTransform(saveTransform);
 	}
 	
 	public void move(double distance) {
@@ -125,6 +153,7 @@ public class RailCar implements Serializable, Cloneable, Shape {
 			polygon.transform(at);
 			loc.setLocation(findPointResults.newPt);
 			lastDirection = findPointResults.direction;
+			direction = findPointResults.direction;
 
 			if (findPointResults.overrun > 0.00001) {
 				// at the end of a shape, pointTowards is the current location

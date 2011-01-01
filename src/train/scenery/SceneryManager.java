@@ -22,6 +22,7 @@
 package train.scenery;
 
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -37,6 +38,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
 
 import train.file.XMLReader;
 import train.file.XMLWriter;
@@ -62,11 +66,14 @@ public final class SceneryManager {
 	private PropertyChangeSupport propertyChangeSupport;
 	private int width;
 	private int height;
+	private Map<String, Image> trainImages;
 	
 	private SceneryManager() {
 		trains = new ArrayList<Train>();
 		branches = new ArrayList<Branch>();
 		junctions = new ArrayList<Junction>();
+		trainImages = new HashMap<String, Image>();
+		loadTrainImages();
 		propertyChangeSupport = new PropertyChangeSupport(this);
 		width = 1000;
 		height = 1000;
@@ -90,6 +97,10 @@ public final class SceneryManager {
 
 	public void setHeight(int height) {
 		this.height = height;
+	}
+	
+	public Image getTrainImage(String key) {
+		return trainImages.get(key);
 	}
 
 	public void renderScenery(Graphics2D g2) {
@@ -477,13 +488,33 @@ public final class SceneryManager {
 		propertyChangeSupport.addPropertyChangeListener(propertyName, listener);
 	}
 	
+	public void loadTrainImages() {
+		File folder = new File("scenery/trains");
+		File[] imageFiles = folder.listFiles(new FilenameFilter(){
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".png") || 
+					name.toLowerCase().endsWith(".gif");
+			}});
+		for (int i = 0; i < imageFiles.length; i++) {
+			Image img = null;
+			try {
+				img = ImageIO.read(imageFiles[i]);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			String name = imageFiles[i].getName().substring(0, imageFiles[i].getName().lastIndexOf("."));
+			trainImages.put(name, img);
+		}
+	}
+	
 	public void createTestScenery() {
 		width = 7500;
 		height = 7500;
 		
 		// track templates
-		Arc2D curve = new Arc2D.Double(300.0, 120.0, 97.5, 97.5, 60.0, 30.0, Arc2D.OPEN);
-		Line2D straight = new Line2D.Double(0.0, 100.0, 56.29165124598852, 100.0);
+		Arc2D curve = new Arc2D.Double(450.0, 120.0, 195.0, 195.0, 60.0, 30.0, Arc2D.OPEN);
+		Line2D straight = new Line2D.Double(0.0, 100.0, 112.583302491977, 100.0);
 		
 		Branch branch = new Branch();
 		branches.add(branch);
@@ -550,8 +581,8 @@ public final class SceneryManager {
 		RailCar car = new RailCar();
 		car.setLoc(Geometry.getPointsFromShape(shape)[1]);
 		car.setBranch(branch);
-		//car.setBranchShapeIndex(1);
 		car.setShape(shape);
+		car.setImage("loco01");
 		car.setPointTowards(Geometry.getPointsFromShape(shape)[0]);
 		car.move(0.0);
 
@@ -559,7 +590,16 @@ public final class SceneryManager {
 		train.addCar(car);
 		train.setSpeed(0);
 		trains.add(train);
-		
+
+		car = new RailCar();
+		car.setLoc(Geometry.getPointsFromShape(shape)[1]);
+		car.setBranch(branch);
+		car.setShape(shape);
+		car.setImage("boxcar01");
+		car.setPointTowards(Geometry.getPointsFromShape(shape)[0]);
+		car.move(-70.0);
+		train.addCar(car);
+
 		Point2D commonPoint = Geometry.getCommonPoint(branch.getShape(0), branch.getShape(branch.getShapeCount() - 1));
 		//addJunction(branch, branch.getShape(0), commonPoint);
 		//addJunction(branch, branch.getShape(branch.getShapeCount() - 1), commonPoint);
