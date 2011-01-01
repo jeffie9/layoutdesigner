@@ -55,9 +55,10 @@ public class SceneryDisplayPanel2D extends JPanel {
 		renderGround(g2);
 		renderRoadbed(g2);
 		renderTies(g2);
+		renderRails(g2);
 		
 		for (Branch branch : SceneryManager.getInstance().getBranches()) {
-			branch.render(g2);
+			//branch.render(g2);
 		}
 		for (Train train : SceneryManager.getInstance().getTrains()) {
 			train.render(g2);
@@ -79,12 +80,12 @@ public class SceneryDisplayPanel2D extends JPanel {
 	}
 	
 	public void renderRoadbed(Graphics2D g2) {
-		Color color = new Color(192, 192, 192);
+		Color color = new Color(96, 96, 96);  // dark grey
 		Color saveColor = g2.getColor();
 		g2.setColor(color);
 		
 		Stroke saveStroke = g2.getStroke();
-		BasicStroke stroke = new BasicStroke(10.0f, 
+		BasicStroke stroke = new BasicStroke(18.0f, 
                 BasicStroke.CAP_BUTT, 
                 BasicStroke.JOIN_MITER);
 		g2.setStroke(stroke);
@@ -101,7 +102,7 @@ public class SceneryDisplayPanel2D extends JPanel {
 	}
 	
 	public void renderTies(Graphics2D g2) {
-		Color color = new Color(102, 51, 51);
+		Color color = new Color(102, 51, 51);  // brown
 		Color saveColor = g2.getColor();
 		g2.setColor(color);
 		
@@ -122,15 +123,7 @@ public class SceneryDisplayPanel2D extends JPanel {
 							line.getY1() - unit.getX() * 8.0, 
 							line.getX1() - unit.getY() * 8.0, 
 							line.getY1() + unit.getX() * 8.0);
-					g2.setColor(Color.RED);
-					g2.draw(tie);
-					
-					if (unit.getX() > 0) {
-						g2.setColor(Color.YELLOW);
-					} else {
-						g2.setColor(color);
-					}
-					
+					//g2.draw(tie);
 					AffineTransform at = AffineTransform.getTranslateInstance(unit.getX() * -5.0, unit.getY() * -5.0);
 					for (double step = 0.0; step < distance; step += 5.0) {
 						Geometry.transform(tie, at);
@@ -139,7 +132,21 @@ public class SceneryDisplayPanel2D extends JPanel {
 					
 				} else if (shape instanceof Arc2D) {
 					Arc2D arc = (Arc2D) shape;
-					
+					Point2D[] points = Geometry.getPointsFromShape(arc);
+					Point2D unit = Geometry.calcUnitVector(points[2], points[0]);
+					Line2D tie = new Line2D.Double(
+							points[0].getX() + unit.getX() * 8.0,
+							points[0].getY() + unit.getY() * 8.0,
+							points[0].getX() - unit.getX() * 8.0,
+							points[0].getY() - unit.getY() * 8.0);
+					//g2.draw(tie);
+					double angleStep = 5.0 / (arc.getWidth() / 2.0); 
+					AffineTransform at = AffineTransform.getRotateInstance(-angleStep, points[2].getX(), points[2].getY());
+					angleStep = Math.toDegrees(angleStep);
+					for (double step = 0; step < arc.getAngleExtent(); step += angleStep) {
+						Geometry.transform(tie, at);
+						g2.draw(tie);
+					}
 				}
 				
 			}
@@ -148,5 +155,50 @@ public class SceneryDisplayPanel2D extends JPanel {
 		g2.setStroke(saveStroke);
 		g2.setColor(saveColor);
 		
+	}
+	
+	public void renderRails(Graphics2D g2) {
+		Color color = new Color(192, 192, 192);  // silver-ish
+		Color saveColor = g2.getColor();
+		g2.setColor(color);
+		
+		Stroke saveStroke = g2.getStroke();
+		BasicStroke stroke = new BasicStroke(1.0f, 
+                BasicStroke.CAP_BUTT, 
+                BasicStroke.JOIN_MITER);
+		g2.setStroke(stroke);
+
+		for (Branch branch : SceneryManager.getInstance().getBranches()) {
+			for (Shape shape : branch.getShapes()) {
+				if (shape instanceof Line2D) {
+					Line2D line = (Line2D) shape;
+					Point2D unit = Geometry.calcUnitVector(line.getP1(), line.getP2());
+					AffineTransform at = AffineTransform.getTranslateInstance(unit.getY() * 5.0, unit.getX() * -5.0);
+					Shape rail = at.createTransformedShape(line);
+					g2.draw(rail);
+					at.setToTranslation(unit.getY() * -5.0, unit.getX() * 5.0);
+					rail = at.createTransformedShape(line);
+					g2.draw(rail);
+				} else if (shape instanceof Arc2D) {
+					Arc2D arc = (Arc2D) shape;
+					double radius = arc.getWidth() / 2.0;
+					double scale = (radius - 5.0) / radius;
+					AffineTransform at = AffineTransform.getTranslateInstance(arc.getCenterX(), arc.getCenterY());
+					at.scale(scale, scale);
+					at.translate(-arc.getCenterX(), -arc.getCenterY());
+					Shape rail = at.createTransformedShape(arc);
+					g2.draw(rail);
+					scale = (radius + 5.0) / radius;
+					at.setToTranslation(arc.getCenterX(), arc.getCenterY());
+					at.scale(scale, scale);
+					at.translate(-arc.getCenterX(), -arc.getCenterY());
+					rail = at.createTransformedShape(arc);
+					g2.draw(rail);
+				}
+			}
+		}
+
+		g2.setStroke(saveStroke);
+		g2.setColor(saveColor);
 	}
 }
