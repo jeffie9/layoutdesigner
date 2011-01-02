@@ -112,10 +112,7 @@ public class TrainApp {
         toolMenuAction = new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("Setting MouseAdapter for " + e.getActionCommand());
-				// there doesn't seem to be a way to assign an Object to a MenuItem
-				// so use the label
-				layoutEditPanel.setActiveMouseListener(e.getActionCommand());
+				System.out.println("Does nothing now");
 			}};
         
 		fileOpenAction = new AbstractAction("Open", null, "Load an existing layout",

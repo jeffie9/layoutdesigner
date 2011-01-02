@@ -22,60 +22,41 @@
 package train.view;
 
 import java.awt.BorderLayout;
-import java.awt.Canvas;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeListenerProxy;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JToolBar;
-import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import train.scenery.Branch;
@@ -85,22 +66,20 @@ import train.util.Geometry;
 @SuppressWarnings("serial")
 public class LayoutEditPanel extends JPanel {
 
-	public enum Tool {SELECT, MOVE, ROTATE, SIZE};
+	public enum Mode {SELECT, MOVE, ADD, ROTATE, SIZE, INSPECT};
+	private Mode mode;
 	
 	private List<Shape> selectedShapes;
-	
 	private GridPanel canvas;
-	private Map<String, MouseAdapter> mouseToolMap;
-	private String activeMouseListenerKey = null;
-	
-	public MouseAdapter objectLibraryMouseAdapter;
-	
+	private MouseAdapter mouseAdapter;
     protected DropTarget dropTarget;
-
 	
 	public LayoutEditPanel() {
         super(new BorderLayout());
 
+        mode = Mode.SELECT;
+        mouseAdapter = new EditMouseAdapter();
+        
         JPanel centerPanel = new JPanel(new GridLayout(0,1));
         
         canvas = new GridPanel();
@@ -116,47 +95,24 @@ public class LayoutEditPanel extends JPanel {
         JToolBar toolBar = new JToolBar("Object Library");
         toolBar.setOrientation(JToolBar.VERTICAL);
 
-        FromTransferHandler fromHandler = new FromTransferHandler();
-        objectLibraryMouseAdapter = new MouseAdapter(){
-			@Override
-			public void mousePressed(MouseEvent e) {
-				System.out.println("Mouse pressed: " + e.getSource());
-				JComponent comp = (JComponent)e.getSource(); 
-				TransferHandler th = comp.getTransferHandler(); 
-				// Start the drag operation 
-				th.exportAsDrag(comp, e, TransferHandler.COPY); 
-				//setActiveMouseListener("Drag");
-			}};
-        
-        
         JLabel label = new JLabel("Straight");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
+        label.addMouseListener(mouseAdapter);
+        label.addMouseMotionListener(mouseAdapter);
         toolBar.add(label);
         
         label = new JLabel("Curve");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
+        label.addMouseListener(mouseAdapter);
+        label.addMouseMotionListener(mouseAdapter);
         toolBar.add(label);
         
         label = new JLabel("Half-Straight");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
+        label.addMouseListener(mouseAdapter);
+        label.addMouseMotionListener(mouseAdapter);
         toolBar.add(label);
         
         label = new JLabel("Half-Curve");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
-        toolBar.add(label);
-        
-        label = new JLabel("Left-Switch");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
-        toolBar.add(label);
-
-        label = new JLabel("Right-Switch");
-        label.addMouseListener(objectLibraryMouseAdapter);
-        label.setTransferHandler(fromHandler);
+        label.addMouseListener(mouseAdapter);
+        label.addMouseMotionListener(mouseAdapter);
         toolBar.add(label);
         
         add(toolBar, BorderLayout.LINE_END);
@@ -164,19 +120,12 @@ public class LayoutEditPanel extends JPanel {
         // User input objects
         selectedShapes = new ArrayList<Shape>();
         canvas.setSelectedShapes(selectedShapes);
-
-        mouseToolMap = new HashMap<String, MouseAdapter>();
-        mouseToolMap.put("Select", new SelectHandler());
-        mouseToolMap.put("Move", new MoveHandler());
-        mouseToolMap.put("Rotate", new RotateHandler());
-        mouseToolMap.put("Size", new SizeHandler());
-        mouseToolMap.put("Inspector", new InspectorHandler());
-        
-        setActiveMouseListener("Select");
+        canvas.addMouseListener(mouseAdapter);
+        canvas.addMouseMotionListener(mouseAdapter);
         
         ToTransferHandler toHandler = new ToTransferHandler();
         canvas.setTransferHandler(toHandler);
-        dropTarget = new DropTarget(canvas, DnDConstants.ACTION_COPY, new DropTargetHandler(), true, null);
+        //dropTarget = new DropTarget(canvas, DnDConstants.ACTION_COPY, new DropTargetHandler(), true, null);
 
 		SceneryManager.getInstance().addPropertyChangeListener("layout", new PropertyChangeListener() {
 			@Override
@@ -187,19 +136,6 @@ public class LayoutEditPanel extends JPanel {
 						SceneryManager.getInstance().getHeight()));
 			}});
 
-	}
-	
-	public void setActiveMouseListener(String key) {
-		if (activeMouseListenerKey != null) {
-			canvas.removeMouseListener(mouseToolMap.get(activeMouseListenerKey));
-			canvas.removeMouseMotionListener(mouseToolMap.get(activeMouseListenerKey));
-			canvas.removeMouseWheelListener(mouseToolMap.get(activeMouseListenerKey));
-		}
-		
-		activeMouseListenerKey = key;
-		canvas.addMouseListener(mouseToolMap.get(activeMouseListenerKey));
-		canvas.addMouseMotionListener(mouseToolMap.get(activeMouseListenerKey));
-		canvas.addMouseWheelListener(mouseToolMap.get(activeMouseListenerKey));
 	}
 	
 	public void selectAllShapes() {
@@ -471,191 +407,65 @@ public class LayoutEditPanel extends JPanel {
 				(int)(point.getY() / canvas.scale));
 	}
 	
-	public class SelectHandler extends MouseAdapter {
-		@Override
-		public void mouseDragged(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			Point pt = scalePoint(e.getPoint());
-	        Shape[] shapes = Geometry.findShapesAtPoint(pt, Geometry.CLOSE_ENOUGH);
-	        if (shapes != null) {
-	        	if (!selectedShapes.contains(shapes[0])) {
-	        		selectedShapes.add(shapes[0]);
-	        	}
-	        } else {
-	        	selectedShapes.clear();
-	        }
-	        canvas.repaint();
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-		}
-	}
-	
-	public class MoveHandler extends MouseAdapter {
-		private Point lastPoint;
-		
-		@Override
-		public void mouseDragged(MouseEvent e) {
-	        moveSelectedShapes(lastPoint, scalePoint(e.getPoint()));
-	        lastPoint = scalePoint(e.getPoint());
-	        canvas.repaint();
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-	        lastPoint = scalePoint(e.getPoint());
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			// TODO mouse drag should have taken care of this (delta is always 0)
-	        moveSelectedShapes(lastPoint, scalePoint(e.getPoint()));
-	        snapSelectedShapes();
-	        canvas.repaint();
-		}
-		
-	}
-
-	public class RotateHandler extends MouseAdapter {
+	public class EditMouseAdapter extends MouseAdapter {
 		Point lastPoint, centerPoint;
 		
 		@Override
 		public void mouseDragged(MouseEvent e) {
-	        rotateSelectedShapes(lastPoint, scalePoint(e.getPoint()), centerPoint);
-	        lastPoint = scalePoint(e.getPoint());
-	        canvas.repaint();
-		}
+			if (mode == Mode.MOVE) { 
+				moveSelectedShapes(lastPoint, scalePoint(e.getPoint()));
+		        lastPoint = scalePoint(e.getPoint());
+		        canvas.repaint();
+			} else if (mode == Mode.ROTATE) {
+		        rotateSelectedShapes(lastPoint, scalePoint(e.getPoint()), centerPoint);
+		        lastPoint = scalePoint(e.getPoint());
+		        canvas.repaint();
+			} else if (mode == Mode.SIZE) {
+				sizeSelectedShapes(lastPoint, scalePoint(e.getPoint()));
+				lastPoint = scalePoint(e.getPoint());
+				canvas.repaint();
+			} else if (mode == Mode.ADD) {
+				Point pointOnCanvas = new Point((int)(e.getLocationOnScreen().getX() - canvas.getLocationOnScreen().getX()),
+						(int)(e.getLocationOnScreen().getY() - canvas.getLocationOnScreen().getY()));
+				Point pt = scalePoint(pointOnCanvas);
 
-		@Override
-		public void mouseMoved(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-	        lastPoint = scalePoint(e.getPoint());
-	        centerPoint = calcSelectedShapesCentroid();
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			// TODO mouse drag should have taken care of this (delta is always 0)
-	        rotateSelectedShapes(lastPoint, scalePoint(e.getPoint()), centerPoint);
-	        snapSelectedShapes();
-	        canvas.repaint();
-		}
-	}
-	
-	public class SizeHandler extends MouseAdapter {
-		Point lastPoint;
-		
-		@Override
-		public void mouseDragged(MouseEvent e) {
-			sizeSelectedShapes(lastPoint, scalePoint(e.getPoint()));
-			lastPoint = scalePoint(e.getPoint());
-			canvas.repaint();
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseClicked(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-	        lastPoint = scalePoint(e.getPoint());
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			snapSelectedPoint(scalePoint(e.getPoint()));
-			canvas.repaint();
-		}
-	}
-	
-	public class InspectorHandler extends MouseAdapter {
-		@Override
-		public void mouseDragged(MouseEvent e) {
-		}
-
-		@Override
-		public void mouseMoved(MouseEvent e) {
-			// just looking at point values if any under mouse
-			Point pt = scalePoint(e.getPoint());
-	        List<Point2D> pointList = new ArrayList<Point2D>();
-			for (Branch branch : SceneryManager.getInstance().getBranches()) {
-	        	for (Shape shape : branch.getShapes()) {
-	        		Point2D[] points = Geometry.getPointsFromShape(shape);
-	        		for (int i = 0; i < 2; i++) {
-	        			if (pt.distance(points[i]) < Geometry.CLOSE_ENOUGH) {
-	        				pointList.add(points[i]);
-	        			}
-	        		}
+	        	Rectangle rect = new Rectangle(pointOnCanvas);
+	        	for (int i = 0; i < canvas.dragShape.length; i++) {
+		        	rect.add(canvas.dragShape[i].getBounds());
+		        	Geometry.translate(canvas.dragShape[i], pt.getX() - lastPoint.getX(), pt.getY() - lastPoint.getY());
+		        	rect.add(canvas.dragShape[i].getBounds());
 	        	}
-	        }
-			if (pointList.size() > 0) {
-				for (Point2D point : pointList) {
-					System.out.println("Point: " + point.getX() + ", " + point.getY());
+	        	rect.grow(10, 10);
+	        	rect.setLocation((int) (pointOnCanvas.getX() - rect.getWidth() / 2.0), 
+	        			(int) (pointOnCanvas.getY() - rect.getHeight() / 2.0));
+	        	canvas.repaint(rect);
+	        	//((Graphics2D) canvas.getGraphics()).draw(rect);
+	        	lastPoint = pt;
+			}
+		}
+
+		@Override
+		public void mouseMoved(MouseEvent e) {
+			if (mode == Mode.INSPECT) {
+				// just looking at point values if any under mouse
+				Point pt = scalePoint(e.getPoint());
+		        List<Point2D> pointList = new ArrayList<Point2D>();
+				for (Branch branch : SceneryManager.getInstance().getBranches()) {
+		        	for (Shape shape : branch.getShapes()) {
+		        		Point2D[] points = Geometry.getPointsFromShape(shape);
+		        		for (int i = 0; i < 2; i++) {
+		        			if (pt.distance(points[i]) < Geometry.CLOSE_ENOUGH) {
+		        				pointList.add(points[i]);
+		        			}
+		        		}
+		        	}
+		        }
+				if (pointList.size() > 0) {
+					for (Point2D point : pointList) {
+						System.out.println("Point: " + point.getX() + ", " + point.getY());
+					}
+					System.out.println();
 				}
-				System.out.println();
 			}
 		}
 
@@ -673,25 +483,91 @@ public class LayoutEditPanel extends JPanel {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
+			if (e.getSource() != canvas) {
+				String objectType = ((JLabel)e.getSource()).getText();
+				mode = Mode.ADD;
+				Point pointOnCanvas = new Point((int)(e.getLocationOnScreen().getX() - canvas.getLocationOnScreen().getX()),
+						(int)(e.getLocationOnScreen().getY() - canvas.getLocationOnScreen().getY()));
+		        lastPoint = scalePoint(pointOnCanvas);
+	        	if ("Straight".equals(objectType)) {
+	        		canvas.dragShape = new Shape[1];
+	        		canvas.dragShape[0] = new Line2D.Double(lastPoint.getX() - 28.14582562299426, lastPoint.getY(), lastPoint.getX() + 28.14582562299426, lastPoint.getY());
+	        	} else if ("Half-Straight".equals(objectType)) {
+	        		canvas.dragShape = new Shape[1];
+	        		canvas.dragShape[0] = new Line2D.Double(lastPoint.getX() - 14.07291281149713, lastPoint.getY(), lastPoint.getX() + 14.07291281149713, lastPoint.getY());
+	        	} else if ("Curve".equals(objectType)) {
+	        		canvas.dragShape = new Shape[1];
+	        		canvas.dragShape[0] = new Arc2D.Double(lastPoint.getX() - 80.0, lastPoint.getY() - 20.0, 97.5, 97.5, 30.0, 30.0, Arc2D.OPEN);
+	        	} else if ("Half-Curve".equals(objectType)) {
+	        		canvas.dragShape = new Shape[1];
+	        		canvas.dragShape[0] = new Arc2D.Double(lastPoint.getX() - 80.0, lastPoint.getY() - 20.0, 97.5, 97.5, 30.0, 15.0, Arc2D.OPEN);
+	        	}
+			} else if (mode == Mode.SELECT) {
+				lastPoint = scalePoint(e.getPoint());
+		        Shape[] shapes = Geometry.findShapesAtPoint(lastPoint, Geometry.CLOSE_ENOUGH);
+		        if (shapes != null) {
+		        	if (!selectedShapes.contains(shapes[0])) {
+		        		selectedShapes.add(shapes[0]);
+		        	} else {
+		        		if (e.isControlDown()) {
+		        			mode = Mode.ROTATE;
+		    		        centerPoint = calcSelectedShapesCentroid();
+		        		} else {
+			        		Point2D endPoint = Geometry.findPointNearEndPoint(shapes[0], lastPoint);
+			        		if (endPoint != null) {
+			        			mode = Mode.SIZE;
+			        		} else {
+			        			mode = Mode.MOVE;
+			        		}
+		        		}
+		        	}
+		        } else {
+		        	selectedShapes.clear();
+		        }
+		        canvas.repaint();
+			} else if (mode == Mode.MOVE) {
+		        lastPoint = scalePoint(e.getPoint());
+			} else if (mode == Mode.ROTATE) {
+		        lastPoint = scalePoint(e.getPoint());
+		        centerPoint = calcSelectedShapesCentroid();
+			} else if (mode == Mode.SIZE) {
+		        lastPoint = scalePoint(e.getPoint());
+			}
 		}
 
 		@Override
 		public void mouseReleased(MouseEvent e) {
+			if (mode == Mode.MOVE) {
+				// TODO mouse drag should have taken care of this (delta is always 0)
+		        moveSelectedShapes(lastPoint, scalePoint(e.getPoint()));
+		        snapSelectedShapes();
+		        canvas.repaint();
+			} else if (mode == Mode.ROTATE) {
+				// TODO mouse drag should have taken care of this (delta is always 0)
+		        rotateSelectedShapes(lastPoint, scalePoint(e.getPoint()), centerPoint);
+		        snapSelectedShapes();
+		        canvas.repaint();
+			} else if (mode == Mode.SIZE) {
+				snapSelectedPoint(scalePoint(e.getPoint()));
+				canvas.repaint();
+			} else if (mode == Mode.ADD) {
+				if (canvas.dragShape.length == 1) {
+					SceneryManager.getInstance().addShapeToOpenPoint(canvas.dragShape[0]);
+				} else {
+					SceneryManager.getInstance().addSwitchToOpenPoint(canvas.dragShape);
+				}
+	        	canvas.dragShape = null;
+	        	canvas.repaint();
+			}
+			mode = Mode.SELECT;
 		}
+		
 	}
 	
+	
 
-	class FromTransferHandler extends TransferHandler {
-        public int getSourceActions(JComponent comp) {
-            return COPY;
-        }
-
-        public Transferable createTransferable(JComponent comp) {
-        	System.out.println("Transfer from " + ((JLabel)comp).getText());
-        	return new StringSelection(((JLabel)comp).getText());
-        }
-	}
-
+	
+	
 	class ToTransferHandler extends TransferHandler {
 		Icon image = null;
 		
@@ -834,5 +710,19 @@ public class LayoutEditPanel extends JPanel {
 		
 	}
 	
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				JFrame f = new JFrame("Layout Editor Test");
+				f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				SceneryManager.getInstance().createTestScenery();
+				LayoutEditPanel panel = new LayoutEditPanel();
+				panel.setPreferredSize(new Dimension(1000, 600));
+				f.add(panel);
+				f.pack();
+				f.setVisible(true);
+			}
+		});
+	}
 
 }
