@@ -23,9 +23,12 @@ package train.view;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -42,8 +45,10 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +64,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
+import train.file.XMLReader;
 import train.scenery.Branch;
 import train.scenery.SceneryManager;
 import train.util.Geometry;
@@ -94,27 +100,7 @@ public class LayoutEditPanel extends JPanel {
 
         JToolBar toolBar = new JToolBar("Object Library");
         toolBar.setOrientation(JToolBar.VERTICAL);
-
-        JLabel label = new JLabel("Straight");
-        label.addMouseListener(mouseAdapter);
-        label.addMouseMotionListener(mouseAdapter);
-        toolBar.add(label);
-        
-        label = new JLabel("Curve");
-        label.addMouseListener(mouseAdapter);
-        label.addMouseMotionListener(mouseAdapter);
-        toolBar.add(label);
-        
-        label = new JLabel("Half-Straight");
-        label.addMouseListener(mouseAdapter);
-        label.addMouseMotionListener(mouseAdapter);
-        toolBar.add(label);
-        
-        label = new JLabel("Half-Curve");
-        label.addMouseListener(mouseAdapter);
-        label.addMouseMotionListener(mouseAdapter);
-        toolBar.add(label);
-        
+        loadLibrary(toolBar);
         add(toolBar, BorderLayout.LINE_END);
         
         // User input objects
@@ -136,6 +122,23 @@ public class LayoutEditPanel extends JPanel {
 						SceneryManager.getInstance().getHeight()));
 			}});
 
+	}
+	
+	public void loadLibrary(JToolBar toolBar) {
+		XMLReader reader = new XMLReader();
+		List<Shape> shapes = null;
+		try {
+			shapes = reader.readLibraryFile(new File("scenery/library.xml"));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for (Shape shape : shapes) {
+	        ShapeLabel label = new ShapeLabel(shape);
+	        label.addMouseListener(mouseAdapter);
+	        label.addMouseMotionListener(mouseAdapter);
+	        toolBar.add(label);
+		}
 	}
 	
 	public void selectAllShapes() {
@@ -484,24 +487,19 @@ public class LayoutEditPanel extends JPanel {
 		@Override
 		public void mousePressed(MouseEvent e) {
 			if (e.getSource() != canvas) {
-				String objectType = ((JLabel)e.getSource()).getText();
 				mode = Mode.ADD;
 				Point pointOnCanvas = new Point((int)(e.getLocationOnScreen().getX() - canvas.getLocationOnScreen().getX()),
 						(int)(e.getLocationOnScreen().getY() - canvas.getLocationOnScreen().getY()));
 		        lastPoint = scalePoint(pointOnCanvas);
-	        	if ("Straight".equals(objectType)) {
-	        		canvas.dragShape = new Shape[1];
-	        		canvas.dragShape[0] = new Line2D.Double(lastPoint.getX() - 28.14582562299426, lastPoint.getY(), lastPoint.getX() + 28.14582562299426, lastPoint.getY());
-	        	} else if ("Half-Straight".equals(objectType)) {
-	        		canvas.dragShape = new Shape[1];
-	        		canvas.dragShape[0] = new Line2D.Double(lastPoint.getX() - 14.07291281149713, lastPoint.getY(), lastPoint.getX() + 14.07291281149713, lastPoint.getY());
-	        	} else if ("Curve".equals(objectType)) {
-	        		canvas.dragShape = new Shape[1];
-	        		canvas.dragShape[0] = new Arc2D.Double(lastPoint.getX() - 80.0, lastPoint.getY() - 20.0, 97.5, 97.5, 30.0, 30.0, Arc2D.OPEN);
-	        	} else if ("Half-Curve".equals(objectType)) {
-	        		canvas.dragShape = new Shape[1];
-	        		canvas.dragShape[0] = new Arc2D.Double(lastPoint.getX() - 80.0, lastPoint.getY() - 20.0, 97.5, 97.5, 30.0, 15.0, Arc2D.OPEN);
-	        	}
+		        Shape shape = ((ShapeLabel) e.getSource()).shape;
+		        canvas.dragShape = new Shape[1];
+		        if (shape instanceof Line2D) {
+		        	canvas.dragShape[0] = (Line2D)((Line2D) shape).clone();
+		        } else if (shape instanceof Arc2D) {
+		        	canvas.dragShape[0] = (Arc2D)((Arc2D) shape).clone();
+		        }
+		        // shapes in library are created at origin, simple translate should suffice
+        		Geometry.translate(canvas.dragShape[0], lastPoint.getX(), lastPoint.getY());
 			} else if (mode == Mode.SELECT) {
 				lastPoint = scalePoint(e.getPoint());
 		        Shape[] shapes = Geometry.findShapesAtPoint(lastPoint, Geometry.CLOSE_ENOUGH);
@@ -708,6 +706,37 @@ public class LayoutEditPanel extends JPanel {
         	canvas.repaint(rect);
 		}
 		
+	}
+	
+	class ShapeLabel extends JPanel {
+		Shape shape;
+		
+		public ShapeLabel(Shape shape) {
+			super();
+			this.shape = shape;
+			//setPreferredSize(new Dimension(100, 100));
+		}
+		
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			Graphics2D g2 = (Graphics2D) g;
+			g2.addRenderingHints(new RenderingHints(
+					RenderingHints.KEY_ANTIALIASING,
+					RenderingHints.VALUE_ANTIALIAS_ON));
+			g2.scale(1.0, 1.0);
+			AffineTransform saveTransform = g2.getTransform();
+			g2.translate(getWidth()/2, getHeight()/2);
+			g2.draw(shape);
+			g2.setTransform(saveTransform);
+		}
+		
+		@Override
+		public Dimension getPreferredSize() {
+			Rectangle2D rect = shape.getBounds2D();
+			return rect.getBounds().getSize();
+		}
+
 	}
 	
 	public static void main(String[] args) {
