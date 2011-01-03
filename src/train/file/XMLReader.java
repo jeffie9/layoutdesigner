@@ -26,6 +26,8 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -46,9 +48,14 @@ import train.util.Geometry;
 
 public class XMLReader {
 	public static void main(String[] args) throws Exception {
-		File file = new File(System.getProperty("user.home") + "\\Documents\\test_layout.xml");
+		//File file = new File(System.getProperty("user.home") + "\\Documents\\test_layout.xml");
+		File file = new File("scenery/library.xml");
 		XMLReader reader = new XMLReader();
-		reader.readFile(file);
+		//reader.readFile(file);
+		List<Shape> shapes = reader.readLibraryFile(file);
+		for (Shape shape : shapes) {
+			System.out.println(shape);
+		}
 	}
 	
 	public void readFile(File file) throws Exception {
@@ -83,25 +90,9 @@ public class XMLReader {
 				for (int j = 0; j < shapeNodes.getLength(); j++) {
 					if (shapeNodes.item(j).getNodeType() == Node.ELEMENT_NODE) {
 						Element shapeElement = (Element) shapeNodes.item(j);
-						if ("straight".equals(shapeElement.getLocalName())) {
-							Line2D line = new Line2D.Double(
-									makeDouble("x1", shapeElement),
-									makeDouble("y1", shapeElement),
-									makeDouble("x2", shapeElement),
-									makeDouble("y2", shapeElement));
-							branch.addShape(line);
-						} else if ("curve".equals(shapeElement.getLocalName())) {
-							Point2D start = new Point2D.Double(makeDouble("x1", shapeElement),
-									makeDouble("y1", shapeElement));
-							Point2D end = new Point2D.Double(makeDouble("x2", shapeElement),
-									makeDouble("y2", shapeElement));
-							Point2D center = new Point2D.Double(makeDouble("xc", shapeElement),
-									makeDouble("yc", shapeElement));
-							double radius = start.distance(center);
-							Arc2D arc = new Arc2D.Double(center.getX() - radius, center.getY() - radius,
-									radius * 2.0, radius * 2.0, 0.0, 0.0, Arc2D.OPEN);
-							arc.setAngles(start, end);
-							branch.addShape(arc);
+						Shape shape = makeShape(shapeElement);
+						if (shape != null) {
+							branch.addShape(shape);
 						}
 					}
 				}
@@ -152,11 +143,62 @@ public class XMLReader {
 		}
 	}
 	
+	public List<Shape> readLibraryFile(File file) throws Exception {
+		List<Shape> shapes = new ArrayList<Shape>();
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+		dbf.setNamespaceAware(true);
+        dbf.setValidating(false);
+
+        DocumentBuilder db = dbf.newDocumentBuilder(); 
+        Document doc = db.parse(file);
+        
+        XPathFactory xpf = XPathFactory.newInstance();
+        XPath xpath = xpf.newXPath();
+        NodeList nodes = (NodeList) xpath.evaluate("/library/curve | /library/straight", doc, XPathConstants.NODESET);
+		if (nodes != null) {
+			for (int j = 0; j < nodes.getLength(); j++) {
+				if (nodes.item(j).getNodeType() == Node.ELEMENT_NODE) {
+					Element shapeElement = (Element) nodes.item(j);
+					Shape shape = makeShape(shapeElement);
+					if (shape != null) {
+						shapes.add(shape);
+					}
+				}
+			}
+		}
+		return shapes;
+	}
+	
 	private double makeDouble(String name, Element element) {
 		String value = element.getAttribute(name);
 		if (value != null) {
 			return Double.parseDouble(value);
 		}
 		return Double.NaN;
+	}
+	
+	private Shape makeShape(Element shapeElement) {
+		if ("straight".equals(shapeElement.getLocalName())) {
+			Line2D line = new Line2D.Double(
+					makeDouble("x1", shapeElement),
+					makeDouble("y1", shapeElement),
+					makeDouble("x2", shapeElement),
+					makeDouble("y2", shapeElement));
+			return line;
+		} else if ("curve".equals(shapeElement.getLocalName())) {
+			Point2D start = new Point2D.Double(makeDouble("x1", shapeElement),
+					makeDouble("y1", shapeElement));
+			Point2D end = new Point2D.Double(makeDouble("x2", shapeElement),
+					makeDouble("y2", shapeElement));
+			Point2D center = new Point2D.Double(makeDouble("xc", shapeElement),
+					makeDouble("yc", shapeElement));
+			double radius = start.distance(center);
+			Arc2D arc = new Arc2D.Double(center.getX() - radius, center.getY() - radius,
+					radius * 2.0, radius * 2.0, 0.0, 0.0, Arc2D.OPEN);
+			arc.setAngles(start, end);
+			return arc;
+		}
+		return null;
 	}
 }
