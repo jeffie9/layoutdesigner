@@ -123,15 +123,18 @@ public class RailCar implements Serializable, Cloneable, Shape {
 	}
 	
 	public void render(Graphics2D g2) {
-		//g2.draw(polygon);
-        AffineTransform saveTransform = g2.getTransform();
-        AffineTransform at = new AffineTransform();
-        at.translate(loc.getX(), loc.getY());
-        at.rotate(direction);
-        at.translate(-img.getWidth(null)/2, -img.getHeight(null)/2);
-        g2.setTransform(at);
-        g2.drawImage(img, 0, 0, null);  // location set in translation
-        g2.setTransform(saveTransform);
+		//g2.draw(polygon);  // maybe draw outline if no image
+		if (img != null) {
+	        AffineTransform saveTransform = g2.getTransform();
+	        AffineTransform at = new AffineTransform();
+	        at.concatenate(saveTransform);
+	        at.translate(loc.getX(), loc.getY());
+	        at.rotate(direction);
+	        at.translate(-img.getWidth(null)/2, -img.getHeight(null)/2);
+	        g2.setTransform(at);
+	        g2.drawImage(img, 0, 0, null);  // location set in translation
+	        g2.setTransform(saveTransform);
+		}
 	}
 	
 	public void move(double distance) {
