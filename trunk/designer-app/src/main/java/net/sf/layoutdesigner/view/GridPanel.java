@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.view;
+package net.sf.layoutdesigner.view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -36,9 +36,10 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
-import train.scenery.Branch;
-import train.scenery.Junction;
-import train.scenery.SceneryManager;
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.Junction;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+
 
 @SuppressWarnings("serial")
 public class GridPanel extends JPanel {

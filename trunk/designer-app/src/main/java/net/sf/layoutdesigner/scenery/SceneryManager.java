@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.scenery;
+package net.sf.layoutdesigner.scenery;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -52,9 +52,10 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import train.file.XMLReader;
-import train.file.XMLWriter;
-import train.util.Geometry;
+import net.sf.layoutdesigner.file.XMLReader;
+import net.sf.layoutdesigner.file.XMLWriter;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 public final class SceneryManager {
 	private static Logger logger = Logger.getLogger("TrainApp");

@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -25,7 +25,8 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.text.MessageFormat;
 
-import train.util.Geometry;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 public class CrossProductTest {
 	public static void main(String[] args) {

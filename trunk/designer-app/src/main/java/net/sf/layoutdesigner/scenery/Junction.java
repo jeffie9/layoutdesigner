@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.scenery;
+package net.sf.layoutdesigner.scenery;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -30,7 +30,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import train.util.Geometry;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 
 public class Junction implements Serializable {

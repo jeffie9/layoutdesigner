@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.scenery;
+package net.sf.layoutdesigner.scenery;
 
 import java.awt.Graphics;
 

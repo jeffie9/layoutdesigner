@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.view;
+package net.sf.layoutdesigner.view;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -64,10 +64,11 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
-import train.file.XMLReader;
-import train.scenery.Branch;
-import train.scenery.SceneryManager;
-import train.util.Geometry;
+import net.sf.layoutdesigner.file.XMLReader;
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 @SuppressWarnings("serial")
 public class LayoutEditPanel extends JPanel {

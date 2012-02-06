@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.file;
+package net.sf.layoutdesigner.file;
 
 import java.awt.Shape;
 import java.awt.geom.Arc2D;
@@ -42,16 +42,17 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.Junction;
+import net.sf.layoutdesigner.scenery.RailCar;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+import net.sf.layoutdesigner.scenery.Train;
+import net.sf.layoutdesigner.util.Geometry;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import train.scenery.Branch;
-import train.scenery.Junction;
-import train.scenery.RailCar;
-import train.scenery.SceneryManager;
-import train.scenery.Train;
-import train.util.Geometry;
 
 /**
  * Writes objects in terms of point locations.  SceneryManager can regenerate
