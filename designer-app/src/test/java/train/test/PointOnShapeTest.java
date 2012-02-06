@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -40,7 +40,8 @@ import java.awt.geom.Point2D;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import train.util.Geometry;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 @SuppressWarnings("serial")
 public class PointOnShapeTest extends JPanel implements MouseListener, MouseMotionListener {

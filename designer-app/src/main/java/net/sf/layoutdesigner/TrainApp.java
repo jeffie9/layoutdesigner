@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train;
+package net.sf.layoutdesigner;
 
 import java.awt.CardLayout;
 import java.awt.Dimension;
@@ -49,10 +49,11 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import train.scenery.Branch;
-import train.scenery.SceneryManager;
-import train.view.RunPanel;
-import train.view.LayoutEditPanel;
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+import net.sf.layoutdesigner.view.LayoutEditPanel;
+import net.sf.layoutdesigner.view.RunPanel;
+
 
 
 @SuppressWarnings("serial")

@@ -1,4 +1,4 @@
-package train.util;
+package net.sf.layoutdesigner.util;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.util;
+package net.sf.layoutdesigner.util;
 
 import java.awt.Point;
 import java.awt.Shape;
@@ -33,9 +33,10 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import train.scenery.Branch;
-import train.scenery.RailCar;
-import train.scenery.SceneryManager;
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.RailCar;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+
 
 public final class Geometry {
 	public static final double CLOSE_ENOUGH = 10.0;  // use for drop operations

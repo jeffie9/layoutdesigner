@@ -1,7 +1,7 @@
 /*
  * $Id$
  * 
- * Copyright © 2010 Jeff Eltgroth.
+ * Copyright ï¿½ 2010 Jeff Eltgroth.
  * 
  * This file is part of Layout Designer.
  *
@@ -19,7 +19,7 @@
  * along with Layout Designer.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package train.view;
+package net.sf.layoutdesigner.view;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
@@ -59,13 +59,14 @@ import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import train.TrainApp;
-import train.scenery.Branch;
-import train.scenery.Junction;
-import train.scenery.RailCar;
-import train.scenery.SceneryManager;
-import train.scenery.Train;
-import train.util.Geometry;
+import net.sf.layoutdesigner.TrainApp;
+import net.sf.layoutdesigner.scenery.Branch;
+import net.sf.layoutdesigner.scenery.Junction;
+import net.sf.layoutdesigner.scenery.RailCar;
+import net.sf.layoutdesigner.scenery.SceneryManager;
+import net.sf.layoutdesigner.scenery.Train;
+import net.sf.layoutdesigner.util.Geometry;
+
 
 @SuppressWarnings("serial")
 public class RunPanel extends JPanel {
