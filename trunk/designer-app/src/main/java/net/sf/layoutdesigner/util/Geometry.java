@@ -90,10 +90,8 @@ public final class Geometry {
 		return direction;
 	}
 	
-	public static Point2D calcUnitVector(Point2D p1, Point2D p2) {
+	public static Point2D calcUnitVector(double dx, double dy) {
 		Point2D unit;
-		double dx = p2.getX() - p1.getX();
-		double dy = p2.getY() - p1.getY();
 		if (dy == 0.0) {
 			if (dx > 0) {
 				unit = new Point2D.Double(-1.0, 0.0);
@@ -116,6 +114,12 @@ public final class Geometry {
 			unit = new Point2D.Double(dxu, dyu);
 		}
 		return unit;
+	}
+
+	public static Point2D calcUnitVector(Point2D p1, Point2D p2) {
+		double dx = p2.getX() - p1.getX();
+		double dy = p2.getY() - p1.getY();
+		return calcUnitVector(dx, dy);
 	}
 	
 	public static void translate(Shape shape, double dx, double dy) {
