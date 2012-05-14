@@ -11,10 +11,14 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +36,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import net.sf.layoutdesigner.track.CurveTrack;
 import net.sf.layoutdesigner.track.StraightTrack;
@@ -179,22 +185,16 @@ public class TrackDesigner extends JPanel implements ChangeListener {
 		DynamicPanel[] dynamicPanels;
 		
 		public SwitchPanel() {
-			ActionListener listener = new ActionListener(){
-				@Override
-				public void actionPerformed(ActionEvent evt) {
-					log.fine("got action: " + evt);
-				}};
-
 			setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 			dynamicPanels = new DynamicPanel[3];
 			for (int i = 0; i < 3; i++) {
-				dynamicPanels[i] = new DynamicPanel(listener);
+				dynamicPanels[i] = new DynamicPanel();
 				add(dynamicPanels[i]);
 			}
 		}
 	}
 	
-	class DynamicPanel extends JPanel {
+	class DynamicPanel extends JPanel implements DocumentListener, ActionListener {
 		JCheckBox panelCheck;
 		JComboBox trackCombo;
 		JTextField lengthField;
@@ -204,48 +204,105 @@ public class TrackDesigner extends JPanel implements ChangeListener {
 		JLabel radiusLabel;
 		JLabel extentLabel;
 
-		public DynamicPanel(ActionListener listener) {
+		public DynamicPanel() {
 			//setBorder(BorderFactory.createLineBorder(Color.black));
 			((FlowLayout) getLayout()).setAlignment(FlowLayout.LEFT);
 			panelCheck = new JCheckBox();
-			panelCheck.addActionListener(listener);
+			panelCheck.addActionListener(this);
 			add(panelCheck);
 			
 			trackCombo = new JComboBox(new String[]{"Straight", "Curve"});
-			trackCombo.addActionListener(listener);
+			trackCombo.addActionListener(this);
 			trackCombo.setMaximumSize(new Dimension(50, 25));
+			trackCombo.setEnabled(false);
 			// TODO give trackCombo a listener in this scope
 			add(trackCombo);
 			
 			lengthField = new JTextField();
 			lengthField.setColumns(15);
-			lengthField.addActionListener(listener);
+			lengthField.getDocument().addDocumentListener(this);
 			lengthField.setMaximumSize(new Dimension(50, 25));
+			lengthField.setEnabled(false);
 			lengthLabel = new JLabel("Length");
 			lengthLabel.setLabelFor(lengthField);
+			lengthLabel.setEnabled(false);
 			add(lengthLabel);
 			add(lengthField);
 			
 			// these controls are initially not visible
 			radiusField = new JTextField("97.5");
 			radiusField.setColumns(10);
-			radiusField.addActionListener(listener);
+			radiusField.getDocument().addDocumentListener(this);
 			radiusField.setVisible(false);
+			radiusField.setEnabled(false);
 			radiusLabel = new JLabel("Radius");
 			radiusLabel.setLabelFor(radiusField);
 			radiusLabel.setVisible(false);
+			radiusField.setEnabled(false);
 			add(radiusLabel);
 			add(radiusField);
 			
 			extentField = new JTextField("30.0");
 			extentField.setColumns(10);
-			extentField.addActionListener(listener);
+			extentField.getDocument().addDocumentListener(this);
 			extentField.setVisible(false);
+			extentField.setEnabled(false);
 			extentLabel = new JLabel("Extent");
 			extentLabel.setLabelFor(extentField);
 			extentLabel.setVisible(false);
+			extentLabel.setEnabled(false);
 			add(extentLabel);
 			add(extentField);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent evt) {
+			log.fine("got action event: " + evt);
+			if (evt.getSource() == panelCheck) {
+				log.fine("track selected: " + panelCheck.isSelected());
+				trackCombo.setEnabled(panelCheck.isSelected());
+				lengthLabel.setEnabled(panelCheck.isSelected());
+				lengthField.setEnabled(panelCheck.isSelected());
+				radiusLabel.setEnabled(panelCheck.isSelected());
+				radiusField.setEnabled(panelCheck.isSelected());
+				extentLabel.setEnabled(panelCheck.isSelected());
+				extentField.setEnabled(panelCheck.isSelected());
+			} else if (evt.getSource() == trackCombo) {
+				log.fine("track type: " + trackCombo.getSelectedItem());
+				switch (trackCombo.getSelectedIndex()) {
+				case 0:  // Straight
+					lengthField.setVisible(true);
+					lengthLabel.setVisible(true);
+					radiusField.setVisible(false);
+					radiusLabel.setVisible(false);
+					extentField.setVisible(false);
+					extentLabel.setVisible(false);
+					break;
+				case 1:  // Curve
+					lengthField.setVisible(false);
+					lengthLabel.setVisible(false);
+					radiusField.setVisible(true);
+					radiusLabel.setVisible(true);
+					extentField.setVisible(true);
+					extentLabel.setVisible(true);
+					break;
+				}
+			}
+		}
+
+		@Override
+		public void changedUpdate(DocumentEvent evt) {
+			log.fine("got change event: " + evt);
+		}
+
+		@Override
+		public void insertUpdate(DocumentEvent evt) {
+			log.fine("got insert event: " + evt);
+		}
+
+		@Override
+		public void removeUpdate(DocumentEvent evt) {
+			log.fine("got remove event: " + evt);
 		}
 		
 	}
