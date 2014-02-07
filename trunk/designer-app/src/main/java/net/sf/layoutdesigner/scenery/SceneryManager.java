@@ -54,6 +54,8 @@ import javax.imageio.ImageIO;
 
 import net.sf.layoutdesigner.file.XMLReader;
 import net.sf.layoutdesigner.file.XMLWriter;
+import net.sf.layoutdesigner.track.CurveTrack;
+import net.sf.layoutdesigner.track.StraightTrack;
 import net.sf.layoutdesigner.util.Geometry;
 
 
@@ -497,15 +499,17 @@ public final class SceneryManager {
 				return name.toLowerCase().endsWith(".png") || 
 					name.toLowerCase().endsWith(".gif");
 			}});
-		for (int i = 0; i < imageFiles.length; i++) {
-			Image img = null;
-			try {
-				img = ImageIO.read(imageFiles[i]);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			String name = imageFiles[i].getName().substring(0, imageFiles[i].getName().lastIndexOf("."));
-			trainImages.put(name, img);
+		if (imageFiles != null) {
+    		for (int i = 0; i < imageFiles.length; i++) {
+    			Image img = null;
+    			try {
+    				img = ImageIO.read(imageFiles[i]);
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+    			String name = imageFiles[i].getName().substring(0, imageFiles[i].getName().lastIndexOf("."));
+    			trainImages.put(name, img);
+    		}
 		}
 	}
 	
@@ -521,7 +525,9 @@ public final class SceneryManager {
 		branches.add(branch);
 		
 		// first one goes where we put it
-		Shape shape = new Arc2D.Double(curve.getX(), curve.getY(), curve.getWidth(), curve.getHeight(), curve.getAngleStart(), curve.getAngleExtent(), curve.getArcType());
+		Shape shape = new CurveTrack(curve.getStartPoint().getX(), curve.getStartPoint().getY(), 
+		        curve.getEndPoint().getX(), curve.getEndPoint().getY(),
+		        curve.getCenterX(), curve.getCenterY());
 		branch.addShape(shape);
 		
 		// the rest have to move
@@ -530,7 +536,7 @@ public final class SceneryManager {
 		
 		// right side curves
 		for (int i = 0; i < 6; i++) {
-			newShape = new Arc2D.Double(curve.getX(), curve.getY(), curve.getWidth(), curve.getHeight(), curve.getAngleStart(), curve.getAngleExtent(), curve.getArcType());
+			newShape = new CurveTrack(97.5, 30.0);
 			at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[0], Geometry.getPointsFromShape(newShape)[1]);
 			Geometry.transform(newShape, at);
 			branch.addShape(newShape);
@@ -539,7 +545,7 @@ public final class SceneryManager {
 		
 		// right-to-left diagonal
 		for (int i = 0; i < 3; i++) {
-			newShape = new Line2D.Double(straight.getP1(), straight.getP2());
+			newShape = new StraightTrack(112.583302491977);
 			at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[0], Geometry.getPointsFromShape(newShape)[1]);
 			Geometry.transform(newShape, at);
 			branch.addShape(newShape);
@@ -547,7 +553,7 @@ public final class SceneryManager {
 		}
 		
 		// one to change direction
-		newShape = new Arc2D.Double(curve.getX(), curve.getY(), curve.getWidth(), curve.getHeight(), curve.getAngleStart(), curve.getAngleExtent(), curve.getArcType());
+		newShape = new CurveTrack(97.5, 30.0);
 		at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[0], Geometry.getPointsFromShape(newShape)[0]);
 		Geometry.transform(newShape, at);
 		branch.addShape(newShape);
@@ -555,7 +561,7 @@ public final class SceneryManager {
 
 		// left side curves
 		for (int i = 0; i < 7; i++) {
-			newShape = new Arc2D.Double(curve.getX(), curve.getY(), curve.getWidth(), curve.getHeight(), curve.getAngleStart(), curve.getAngleExtent(), curve.getArcType());
+			newShape = new CurveTrack(97.5, 30.0);
 			at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[1], Geometry.getPointsFromShape(newShape)[0]);
 			Geometry.transform(newShape, at);
 			branch.addShape(newShape);
@@ -564,7 +570,7 @@ public final class SceneryManager {
 		
 		// left-to-right diagonal
 		for (int i = 0; i < 3; i++) {
-			newShape = new Line2D.Double(straight.getP1(), straight.getP2());
+			newShape = new StraightTrack(112.583302491977);
 			at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[1], Geometry.getPointsFromShape(newShape)[0]);
 			Geometry.transform(newShape, at);
 			branch.addShape(newShape);
@@ -572,7 +578,7 @@ public final class SceneryManager {
 		}
 
 		// one last curve
-		newShape = new Arc2D.Double(curve.getX(), curve.getY(), curve.getWidth(), curve.getHeight(), curve.getAngleStart(), curve.getAngleExtent(), curve.getArcType());
+		newShape = new CurveTrack(97.5, 30.0);
 		at = Geometry.getSnapToTransform(shape, newShape, Geometry.getPointsFromShape(shape)[1], Geometry.getPointsFromShape(newShape)[1]);
 		Geometry.transform(newShape, at);
 		branch.addShape(newShape);

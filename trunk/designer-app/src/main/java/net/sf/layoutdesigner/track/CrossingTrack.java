@@ -2,6 +2,6 @@ package net.sf.layoutdesigner.track;
 
 
 
-public class CrossingTrack extends AbstractMultiTrack {
+public class CrossingTrack /* extends AbstractMultiTrack */ {
 
 }

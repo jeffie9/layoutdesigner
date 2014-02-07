@@ -95,7 +95,7 @@ public class TrackDesigner {
                 g2.setTransform(at);
 
                 if (track != null) {
-                    track.draw(g2);
+                    //track.draw(g2);
                 }
 
                 g2.setTransform(saveTransform);

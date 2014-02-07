@@ -23,6 +23,7 @@ package net.sf.layoutdesigner;
 
 import java.awt.CardLayout;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Shape;
 import java.awt.Toolkit;
@@ -53,43 +54,181 @@ import net.sf.layoutdesigner.scenery.Branch;
 import net.sf.layoutdesigner.scenery.SceneryManager;
 import net.sf.layoutdesigner.view.LayoutEditPanel;
 import net.sf.layoutdesigner.view.RunPanel;
+import net.sf.layoutdesigner.view.TrackDesignerPanel;
+
+import java.awt.event.InputEvent;
 
 
 
 @SuppressWarnings("serial")
 public class TrainApp {
+    private JFrame frame;
+
+    
     JPanel cards; //a panel that uses CardLayout
     final static String FRAME_TEXT = "Train v 0.1";
     final static String RUNPANEL = "Run View";
     final static String LAYOUTEDITPANEL = "Layout Edit View";
+    final static String TRACKDESIGNERPANEL = "Track Designer";
     
     LayoutEditPanel layoutEditPanel;
     RunPanel runPanel;
+    TrackDesignerPanel trackDesignerPanel;
     
     public ActionListener cardSwitchAction;
 	public ActionListener toolMenuAction;
-	public Action fileOpenAction;
-	public Action fileSaveAction;
-	public Action fileSaveAsAction;
-	public Action selectAllAction;
-	public Action pasteAction;
-	public Action deleteAction;
+	public Action fileOpenAction = new FileOpenAction();
+	public Action fileSaveAction = new FileSaveAction();
+	public Action fileSaveAsAction = new FileSaveAsAction();
+	public Action selectAllAction = new SelectAllAction();
+	public Action pasteAction = new PasteAction();
+	public Action deleteAction = new DeleteAction();
 	public ActionListener runMenuAction;
 
 	private File activeFile;
 	
 	public static void main(String[] args) {
-
-        SwingUtilities.invokeLater(new Runnable() {
+        EventQueue.invokeLater(new Runnable() {
             public void run() {
-                //Turn off metal's use of bold fonts
-    	        UIManager.put("swing.boldMetal", Boolean.FALSE);
-                createAndShowGUI(); 
+                try {
+                    UIManager.put("swing.boldMetal", Boolean.FALSE);
+                    TrainApp window = new TrainApp();
+                    SceneryManager.getInstance().createTestScenery();
+                    // Get the size of the default screen
+                    Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+                    window.frame.setSize(new Dimension((int)(dim.getWidth() * 2.0/3.0), (int)(dim.getHeight() * 2.0/3.0)));
+                    window.frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
+
     }
 	
 	public TrainApp() {
+	    initialize();
+	}
+	
+    /**
+     * Initialize the contents of the frame.
+     */
+    private void initialize() {
+        frame = new JFrame();
+        frame.setTitle("Train v 0.1");
+        frame.setBounds(100, 100, 450, 300);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.getContentPane().setLayout(new CardLayout(0, 0));
+        
+        runPanel = new RunPanel();
+        frame.getContentPane().add(runPanel, RUNPANEL);
+        layoutEditPanel = new LayoutEditPanel();
+        frame.getContentPane().add(layoutEditPanel, LAYOUTEDITPANEL);
+        trackDesignerPanel = new TrackDesignerPanel();
+        frame.getContentPane().add(trackDesignerPanel, TRACKDESIGNERPANEL);
+        
+        JMenuBar menuBar = new JMenuBar();
+        frame.setJMenuBar(menuBar);
+        
+        JMenu mnFile = new JMenu("File");
+        menuBar.add(mnFile);
+        
+        JMenuItem mntmNew = new JMenuItem("New");
+        mnFile.add(mntmNew);
+        
+        JMenuItem mntmOpen = new JMenuItem("Open");
+        mntmOpen.setAction(fileOpenAction);
+        mnFile.add(mntmOpen);
+        
+        JMenuItem mntmSave = new JMenuItem("Save");
+        mntmSave.setAction(fileSaveAction);
+        mnFile.add(mntmSave);
+        
+        JMenuItem mntmSaveAs = new JMenuItem("Save As...");
+        mntmSaveAs.setAction(fileSaveAsAction);
+        mnFile.add(mntmSaveAs);
+        
+        JMenuItem mntmExit = new JMenuItem("Exit");
+        mnFile.add(mntmExit);
+        
+        JMenu mnEdit = new JMenu("Edit");
+        menuBar.add(mnEdit);
+        
+        JMenuItem mntmCut = new JMenuItem("Cut");
+        mnEdit.add(mntmCut);
+        
+        JMenuItem mntmCopy = new JMenuItem("Copy");
+        mnEdit.add(mntmCopy);
+        
+        JMenuItem mntmPaste = new JMenuItem("Paste");
+        mntmPaste.setAction(pasteAction);
+        mnEdit.add(mntmPaste);
+        
+        JMenuItem mntmDelete = new JMenuItem("Delete");
+        mntmDelete.setAction(deleteAction);
+        mnEdit.add(mntmDelete);
+        
+        JMenuItem mntmSelectAll = new JMenuItem("Select All");
+        mntmSelectAll.setAction(selectAllAction);
+        mnEdit.add(mntmSelectAll);
+        
+        JMenu mnLayout = new JMenu("Layout");
+        menuBar.add(mnLayout);
+        
+        JMenu mnRun = new JMenu("Run");
+        menuBar.add(mnRun);
+        
+        JMenuItem mntmStart = new JMenuItem("Start");
+        mntmStart.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                runPanel.startFrameLoop(100);
+            }
+        });
+        mnRun.add(mntmStart);
+        
+        JMenuItem mntmStop = new JMenuItem("Stop");
+        mntmStop.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                runPanel.stopFrameLoop();
+            }
+        });
+        mnRun.add(mntmStop);
+        
+        JMenu mnWindow = new JMenu("Window");
+        menuBar.add(mnWindow);
+        
+        JMenuItem mntmRunView = new JMenuItem(RUNPANEL);
+        mntmRunView.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CardLayout cl = (CardLayout)(frame.getContentPane().getLayout());
+                cl.show(frame.getContentPane(), RUNPANEL);
+            }
+        });
+        mnWindow.add(mntmRunView);
+        
+        JMenuItem mntmLayoutEditView = new JMenuItem(LAYOUTEDITPANEL);
+        mntmLayoutEditView.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CardLayout cl = (CardLayout)(frame.getContentPane().getLayout());
+                cl.show(frame.getContentPane(), LAYOUTEDITPANEL);
+            }
+        });
+        mnWindow.add(mntmLayoutEditView);
+        
+        JMenuItem mntmTrackDesigner = new JMenuItem("Track Designer");
+        mntmTrackDesigner.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CardLayout cl = (CardLayout)(frame.getContentPane().getLayout());
+                cl.show(frame.getContentPane(), TRACKDESIGNERPANEL);
+            }
+        });
+        mnWindow.add(mntmTrackDesigner);
+
+                
+    }
+
+	
+	private void oldConstructor() {
 		activeFile = null;
 		
         //Create the panel that contains the "cards".
@@ -115,58 +254,7 @@ public class TrainApp {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Does nothing now");
 			}};
-        
-		fileOpenAction = new AbstractAction("Open", null, "Load an existing layout",
-				KeyEvent.VK_O, KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK)) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fc = new JFileChooser();
-				int returnVal = fc.showOpenDialog(cards);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					activeFile = fc.getSelectedFile();
-					System.out.println("Loading file: " + activeFile.getName() + ".");
-					layoutEditPanel.deselectAllShapes();
-					SceneryManager.getInstance().readFromFile(activeFile);
-					cards.repaint();
-					setFileInTitle(activeFile.getName());
-				}
-			}};
 				
-		fileSaveAction = new AbstractAction("Save", null, "Save current layout",
-				KeyEvent.VK_S, KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK)) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				saveFile();
-			}};
-			
-		fileSaveAsAction = new AbstractAction("Save As...", null, "Save current layout to a new file",
-				0, null) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				saveFileAs();
-			}};
-				
-        selectAllAction = new AbstractAction("Select All", null, "Select all objects",
-        		0, KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.CTRL_MASK)) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				layoutEditPanel.selectAllShapes();
-			}};
-		
-		pasteAction = new AbstractAction("Paste", null, "Paste objects from clipboard",
-				0, KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK)) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				layoutEditPanel.paste();
-			}};
-        
-		deleteAction = new AbstractAction("Delete", null, "Delete selected objects",
-				0, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0)) {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				layoutEditPanel.delete();
-			}};
-
 		runMenuAction = new ActionListener() {
 
 			@Override
@@ -364,7 +452,7 @@ public class TrainApp {
         TrainApp app = new TrainApp();
 		SceneryManager.getInstance().createTestScenery();
         f.setJMenuBar(app.createMenuBar());
-        f.add(app.cards);
+        f.getContentPane().add(app.cards);
         
         // Get the size of the default screen
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
@@ -397,14 +485,85 @@ public class TrainApp {
         }
     }
 
-	abstract class AbstractAction extends javax.swing.AbstractAction {
-		public AbstractAction(String text, ImageIcon icon,
-                String desc, Integer mnemonic, KeyStroke accelerator) {
-	        super(text, icon);
-	        putValue(SHORT_DESCRIPTION, desc);
-	        putValue(MNEMONIC_KEY, mnemonic);
-	        putValue(ACCELERATOR_KEY, accelerator);
-	    }
-	}
+    private class FileOpenAction extends AbstractAction {
+        public FileOpenAction() {
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_MASK));
+            putValue(MNEMONIC_KEY, KeyEvent.VK_O);
+            putValue(NAME, "Open");
+            putValue(SHORT_DESCRIPTION, "Load an existing layout");
+        }
+        public void actionPerformed(ActionEvent e) {
+            final JFileChooser fc = new JFileChooser();
+            int returnVal = fc.showOpenDialog(cards);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                activeFile = fc.getSelectedFile();
+                System.out.println("Loading file: " + activeFile.getName() + ".");
+                layoutEditPanel.deselectAllShapes();
+                SceneryManager.getInstance().readFromFile(activeFile);
+                cards.repaint();
+                setFileInTitle(activeFile.getName());
+            }
+        }
+    }
+    
+    private class FileSaveAction extends AbstractAction {
+        public FileSaveAction() {
+            putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
+            putValue(NAME, "Save");
+            putValue(SHORT_DESCRIPTION, "Save current layout");
+        }
+        public void actionPerformed(ActionEvent e) {
+            saveFile();
+        }
+    }
+    
+    private class FileSaveAsAction extends AbstractAction {
+        public FileSaveAsAction() {
+            putValue(NAME, "Save As...");
+            putValue(SHORT_DESCRIPTION, "Save current layout to a new file");
+        }
+        public void actionPerformed(ActionEvent e) {
+            saveFileAs();
+        }
+    }
+    
+    private class SelectAllAction extends AbstractAction {
+        public SelectAllAction() {
+            putValue(NAME, "Select All");
+            putValue(SHORT_DESCRIPTION, "Select all objects");
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.CTRL_MASK));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            layoutEditPanel.selectAllShapes();
+        }
+    }
+    
+    private class PasteAction extends AbstractAction { 
+        public PasteAction() {
+            putValue(NAME, "Paste");
+            putValue(SHORT_DESCRIPTION, "Paste objects from clipboard");
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK)); 
+        }
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            layoutEditPanel.paste();
+        }
+    }
+    
+    private class DeleteAction extends AbstractAction {
+        public DeleteAction() {
+            putValue(NAME, "Delete");
+            putValue(SHORT_DESCRIPTION, "Delete selected objects");
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+        }
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            layoutEditPanel.delete();
+        }};
 
 }

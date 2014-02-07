@@ -13,105 +13,115 @@ import java.util.logging.Logger;
 
 import net.sf.layoutdesigner.util.Geometry;
 
-public class CurveTrack extends AbstractTrack implements Shape {
-	private static final Logger log = Logger.getLogger(CurveTrack.class.getPackage().getName());
-	private double x1, y1, z1, x2, y2, z2, xc, yc;
+public class CurveTrack extends Arc2D.Double implements Track {
+    private static final long serialVersionUID = 1L;
+    private static final Logger log = Logger.getLogger(CurveTrack.class.getPackage().getName());
+	private double z1, z2, zc;
 	
-	public CurveTrack(double radius, int degrees) {
-		super();
-		double radians = (double) degrees * (Math.PI / 360.0); // need half the angular extent to bisect the chord
-		double xoffset = Math.sin(radians) * radius;
-		double yoffset = Math.cos(radians) * radius;
-		x1 = -xoffset;
-		x2 = xoffset;
-		y1 = 0;
-		y2 = 0;
-		xc = 0;
-		yc = yoffset;
+    /**
+     * Construct a curve from 0 degrees so the coordinates translate to
+     *    start point (radius, 0)
+     *    center point (0, 0)
+     *    end point (sin(extent)*radius, cos(extent)*radius)
+     * @param x The starting point x-coordinate
+     * @param y The starting point y-coordinate
+     * @param radius
+     * @param extent The degrees to sweep the arc counter-clockwise
+     */
+	public CurveTrack(double radius, double extent) {
+	    super(-radius, radius, radius * 2.0, radius * 2.0, 0.0, extent, Arc2D.OPEN);
 	}
 	
+	public CurveTrack(double x1, double y1, double x2, double y2, double xc, double yc) {
+	    Point2D start = new Point2D.Double(x1, y1);
+	    Point2D end = new Point2D.Double(x2, y2);
+	    Point2D center = new Point2D.Double(xc, yc);
+	    double radius = start.distance(center);
+	    setArcByCenter(center.getX(), center.getY(), radius, 0.0, 0.0, OPEN);
+	    setAngles(start, end);
+	}
+	
+   @Override
+    public void translate(int dx, int dy) {
+        translate((double) dx, (double) dy);
+    }
+    
+    @Override
+    public void rotate(double theta, int cx, int cy) {
+        rotate(theta, (double) cx, (double) cy);
+    }
+    
+    @Override
+    public void translate(double dx, double dy) {
+        AffineTransform at = AffineTransform.getTranslateInstance(dx, dy);
+        transform(at);
+    }
+
+    @Override
+    public void rotate(double theta, double cx, double cy) {
+        AffineTransform at = AffineTransform.getRotateInstance(theta, cx, cy);
+        transform(at);
+    }
+
 	@Override
 	public Rectangle getBounds() {
-		// TODO Auto-generated method stub
-		return null;
+	    return getBounds2D().getBounds();
 	}
 
 	@Override
 	public Rectangle2D getBounds2D() {
-		// TODO Auto-generated method stub
-		return null;
+        // create a rectangle where opposite corners are the start and end points
+        Rectangle2D rect = new Rectangle2D.Double(Math.min(getStartPoint().getX(), getEndPoint().getX()), 
+                Math.min(getStartPoint().getY(), getEndPoint().getY()), 
+                Math.abs(getEndPoint().getX() - getStartPoint().getX()), 
+                Math.abs(getEndPoint().getY() - getStartPoint().getY()));
+        // TODO may need to grow the rectangle a little
+        return rect;
 	}
 
 	@Override
 	public boolean contains(double x, double y) {
-		// TODO Auto-generated method stub
-		return false;
+        return getBounds2D().contains(x, y);
 	}
 
 	@Override
 	public boolean contains(Point2D p) {
-		// TODO Auto-generated method stub
-		return false;
+		return getBounds2D().contains(p);
 	}
 
 	@Override
 	public boolean intersects(double x, double y, double w, double h) {
-		// TODO Auto-generated method stub
-		return false;
+		return getBounds2D().intersects(x, y, w, h);
 	}
 
 	@Override
 	public boolean intersects(Rectangle2D r) {
-		// TODO Auto-generated method stub
-		return false;
+		return getBounds2D().intersects(r);
 	}
 
 	@Override
 	public boolean contains(double x, double y, double w, double h) {
-		// TODO Auto-generated method stub
-		return false;
+		return getBounds2D().contains(x, y, w, h);
 	}
 
 	@Override
 	public boolean contains(Rectangle2D r) {
-		// TODO Auto-generated method stub
-		return false;
+		return getBounds2D().contains(r);
 	}
 
 	@Override
-	public PathIterator getPathIterator(AffineTransform at) {
-		// TODO Auto-generated method stub
-		return null;
+	public void transform(AffineTransform at) {
+	    Geometry.transform(this, at);
 	}
 
 	@Override
-	public PathIterator getPathIterator(AffineTransform at, double flatness) {
-		// TODO Auto-generated method stub
-		return null;
+	public void drawRoadbed(Graphics2D g2) {
+		g2.draw(this);
 	}
 
 	@Override
-	protected void transform(AffineTransform at) {
-		double[] points = new double[]{x1, y1, x2, y2, xc, yc};
-		at.transform(points, 0, points, 0, 4);
-		x1 = points[0];
-		y1 = points[1];
-		x2 = points[2];
-		y2 = points[3];
-		xc = points[4];
-		yc = points[5];
-	}
-
-	@Override
-	protected void drawRoadbed(Graphics2D g2) {
-//		Arc2D arc = toArc();
-//		g2.draw(arc);
-	}
-
-	@Override
-	protected void drawTies(Graphics2D g2) {
-		Arc2D arc = toArc();
-		Point2D[] points = Geometry.getPointsFromShape(arc);
+	public void drawTies(Graphics2D g2) {
+		Point2D[] points = Geometry.getPointsFromShape(this);
 		Point2D unit = Geometry.calcUnitVector(points[2], points[0]);
 		Line2D tie = new Line2D.Double(
 				points[0].getX() + unit.getX() * 8.0,
@@ -119,67 +129,30 @@ public class CurveTrack extends AbstractTrack implements Shape {
 				points[0].getX() - unit.getX() * 8.0,
 				points[0].getY() - unit.getY() * 8.0);
 		//g2.draw(tie);
-		double angleStep = 5.0 / (arc.getWidth() / 2.0); 
+		double angleStep = 5.0 / (getWidth() / 2.0); 
 		AffineTransform at = AffineTransform.getRotateInstance(-angleStep, points[2].getX(), points[2].getY());
 		angleStep = Math.toDegrees(angleStep);
-		for (double step = 0; step < arc.getAngleExtent(); step += angleStep) {
+		for (double step = 0; step < getAngleExtent(); step += angleStep) {
 			Geometry.transform(tie, at);
 			g2.draw(tie);
 		}
 	}
 
 	@Override
-	protected void drawRails(Graphics2D g2) {
-		Arc2D arc = toArc();
-		double radius = arc.getWidth() / 2.0;
+	public void drawRails(Graphics2D g2) {
+		double radius = getWidth() / 2.0;
 		double scale = (radius - 5.0) / radius;
-		AffineTransform at = AffineTransform.getTranslateInstance(arc.getCenterX(), arc.getCenterY());
+		AffineTransform at = AffineTransform.getTranslateInstance(getCenterX(), getCenterY());
 		at.scale(scale, scale);
-		at.translate(-arc.getCenterX(), -arc.getCenterY());
-		Shape rail = at.createTransformedShape(arc);
+		at.translate(-getCenterX(), -getCenterY());
+		Shape rail = at.createTransformedShape(this);
 		g2.draw(rail);
 		scale = (radius + 5.0) / radius;
-		at.setToTranslation(arc.getCenterX(), arc.getCenterY());
+		at.setToTranslation(getCenterX(), getCenterY());
 		at.scale(scale, scale);
-		at.translate(-arc.getCenterX(), -arc.getCenterY());
-		rail = at.createTransformedShape(arc);
+		at.translate(-getCenterX(), -getCenterY());
+		rail = at.createTransformedShape(this);
 		g2.draw(rail);
 	}
-	
-	private Arc2D toArc() {
-		Point2D start = new Point2D.Double(x1, y1);
-		Point2D end = new Point2D.Double(x2, y2);
-		Point2D center = new Point2D.Double(xc, yc);
-		double radius = start.distance(center);
-		Arc2D arc = new Arc2D.Double(center.getX() - radius, center.getY() - radius,
-				radius * 2.0, radius * 2.0, 0.0, 0.0, Arc2D.OPEN);
-		arc.setAngles(start, end);
-		return arc;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("CurveTrack [x1=");
-		builder.append(x1);
-		builder.append(", y1=");
-		builder.append(y1);
-		builder.append(", z1=");
-		builder.append(z1);
-		builder.append(", x2=");
-		builder.append(x2);
-		builder.append(", y2=");
-		builder.append(y2);
-		builder.append(", z2=");
-		builder.append(z2);
-		builder.append(", xc=");
-		builder.append(xc);
-		builder.append(", yc=");
-		builder.append(yc);
-		builder.append("]");
-		return builder.toString();
-	}
-	
-
 	
 }

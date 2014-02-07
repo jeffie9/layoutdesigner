@@ -19,7 +19,7 @@ public abstract class AbstractTrack implements Track {
 		rotate(theta, (double) cx, (double) cy);
 	}
 	
-	protected abstract void transform(AffineTransform at);
+	public abstract void transform(AffineTransform at);
 	
 	@Override
 	public void translate(double dx, double dy) {
@@ -33,11 +33,10 @@ public abstract class AbstractTrack implements Track {
 		transform(at);
 	}
 	
-	protected abstract void drawRoadbed(Graphics2D g2);
-	protected abstract void drawTies(Graphics2D g2);
-	protected abstract void drawRails(Graphics2D g2);
+	public abstract void drawRoadbed(Graphics2D g2);
+	public abstract void drawTies(Graphics2D g2);
+	public abstract void drawRails(Graphics2D g2);
 
-	@Override
 	public void draw(Graphics2D g2) {
 		// TODO add context to drive which elements get drawn
 		Color saveColor = g2.getColor();
