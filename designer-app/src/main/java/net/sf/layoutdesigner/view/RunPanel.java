@@ -157,10 +157,11 @@ public class RunPanel extends JPanel {
         ImageIcon icon = TrainApp.createImageIcon("images/Back16.gif");
         tbutton.setIcon(icon);
         tbutton.setToolTipText("Makes train go backwards");
-		c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 1;
-        controlPanel.add(tbutton, c);
+        GridBagConstraints c1 = new GridBagConstraints();
+		c1.gridx = 0;
+		c1.gridy = 1;
+		c1.gridwidth = 1;
+        controlPanel.add(tbutton, c1);
         buttonGroup.add(tbutton);
 
         tbutton = new JToggleButton();
@@ -169,9 +170,10 @@ public class RunPanel extends JPanel {
         icon = TrainApp.createImageIcon("images/Forward16.gif");
         tbutton.setIcon(icon);
         tbutton.setToolTipText("Makes train go forwards");
-		c.gridx = 1;
-		c.gridy = 1;
-        controlPanel.add(tbutton, c);
+        GridBagConstraints c2 = new GridBagConstraints();
+		c2.gridx = 1;
+		c2.gridy = 1;
+        controlPanel.add(tbutton, c2);
         buttonGroup.add(tbutton);
         
         trainControl.add(controlPanel, BorderLayout.LINE_START);
